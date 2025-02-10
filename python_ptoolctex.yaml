@@ -1,0 +1,22 @@
+name: ptoolctex
+channels:
+  - conda-forge
+  - anaconda
+  - plotly
+  - defaults
+dependencies:
+  - python
+  - pandas
+  - pyarrow
+  - numpy
+  - scikit-learn
+  - xgboost
+  - scipy
+  - statsmodels
+  - pingouin
+  - plotly
+  - seaborn
+  - streamlit
+
+# conda env create -f python_ptoolctex.yaml
+# conda env update -f python_ptoolctex.yaml --prune

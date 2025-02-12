@@ -17,6 +17,7 @@ dependencies:
   - plotly
   - seaborn
   - streamlit
+  - scrapy
 
 # conda env create -f python_ptoolctex.yaml
 # conda env update -f python_ptoolctex.yaml --prune

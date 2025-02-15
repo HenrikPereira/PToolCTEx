@@ -15,14 +15,12 @@ class TrialsSpider(scrapy.Spider):
         Faz o parsing da página de resultados:
           - Extrai os links para os detalhes de cada ensaio clínico.
           - Trata a paginação, se houver, seguindo o link para a próxima página.
-          :param **kwargs:
+          :param response:
         """
         # Exemplo: supondo que os resultados estejam numa tabela com a classe "result"
         rows = response.xpath('//table[contains(@class, "result")]//tr')
 
-        # Se a primeira linha for o cabeçalho, ignoramos:
-        for row in rows[1:]:
-            '//*[@id="tabs-1"]/div[3]/table[1]/tbody/tr[7]/td/a'
+        for row in rows:
             relative_link = row.xpath(".//a[contains(text(), 'PT')]/@href").get()
             if relative_link:
                 trial_url = response.urljoin(relative_link)
@@ -35,8 +33,10 @@ class TrialsSpider(scrapy.Spider):
             print(next_page_url)
             yield scrapy.Request(next_page_url, callback=self.parse)
 
-    def parse_trial(self, response):
+    @staticmethod
+    def parse_trial(response):
         item = TrialItem()
+
         item['title'] = "\n".join(response.xpath('//tr[td[1][normalize-space()="A.3"]]/td[3]/table//td/text()').getall()).strip()
         item['eudract_nr'] = response.xpath('//tr[td[1][normalize-space()="A.2"]]/td[3]//text()').get().strip()
         item['nct_nr'] = response.xpath('//tr[td[1][contains(., "NCT")]]/td[3]//text()').get()

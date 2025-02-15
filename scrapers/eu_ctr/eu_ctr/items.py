@@ -6,6 +6,22 @@
 import scrapy
 
 
+class PAPItem(scrapy.Item):
+    Nome = scrapy.Field()
+
+    DCI = scrapy.Field()
+
+    decisao = scrapy.Field()
+
+    data_decisao = scrapy.Field()
+
+    detalhes = scrapy.Field() # População alvo, indicação terapêutica aprovada ou indiferida
+
+    n_doentes = scrapy.Field()
+
+    cond_observ = scrapy.Field()
+
+
 class TrialItem(scrapy.Item):
     # Define o título do ensaio clínico
     title = scrapy.Field()

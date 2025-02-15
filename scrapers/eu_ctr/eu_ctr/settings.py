@@ -21,6 +21,13 @@ EXTENSIONS = {
    'eu_ctr.extensions.CustomStatsExtension': 500,
 }
 
+DOWNLOAD_HANDLERS = {
+    "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+}
+
+TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+PLAYWRIGHT_BROWSER_TYPE = "chromium"  # ou "firefox", "webkit" conforme sua preferência
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "eu_ctr (+http://www.yourdomain.com)"
@@ -71,7 +78,11 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
+
 PARQUET_OUTPUT_FOLDER = 'data'
+
+PAP_FILE_NAME = 'pap.parquet'
+TRIALS_FILE_NAME = 'trials.parquet'
 
 ITEM_PIPELINES = {
    "eu_ctr.pipelines.ParquetPipeline": 300,

@@ -1,7 +1,6 @@
 name: ptoolctex
 channels:
   - conda-forge
-  - anaconda
   - plotly
   - defaults
 dependencies:
@@ -18,6 +17,8 @@ dependencies:
   - seaborn
   - streamlit
   - scrapy
+  - pip:
+      - scrapy-playwright
 
 # conda env create -f python_ptoolctex.yaml
 # conda env update -f python_ptoolctex.yaml --prune

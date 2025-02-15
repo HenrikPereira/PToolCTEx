@@ -11,6 +11,7 @@ class ParquetPipeline:
     def __init__(self, output_folder):
         self.items = []
         self.output_folder = output_folder
+        self.output_file = None
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -26,7 +27,11 @@ class ParquetPipeline:
     def close_spider(self, spider):
         df = pd.DataFrame(self.items)
 
-        output_file = os.path.join(self.output_folder, 'trials.parquet')
+        if spider.name == 'trials':
+            self.output_file = os.path.join(self.output_folder, 'trials.parquet')
 
+        if spider.name == 'pap_infarmed':
+            self.output_file = os.path.join(self.output_folder, 'pap.parquet')
 
-        df.to_parquet(output_file, index=False)
+        df.to_parquet(self.output_file, index=False) if self.output_file is not None else None
+

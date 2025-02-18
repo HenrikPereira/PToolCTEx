@@ -30,6 +30,9 @@ class ParquetPipeline:
         if spider.name == 'trials':
             self.output_file = os.path.join(self.output_folder, 'trials.parquet')
 
+        if spider.name == 'ctis_eu':
+            self.output_file = os.path.join(self.output_folder, 'ctis.parquet')
+
         if spider.name == 'pap_infarmed':
             self.output_file = os.path.join(self.output_folder, 'pap.parquet')
 

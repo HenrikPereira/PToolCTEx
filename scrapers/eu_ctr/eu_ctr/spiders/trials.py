@@ -62,7 +62,8 @@ class TrialsSpider(scrapy.Spider):
         item['end_date'] = response.xpath('//tr[td[2][normalize-space()="Date of the global end of the trial"]]/td[3]//text()').get()
         item['Protocol'] = response.xpath('//tr[td[1][normalize-space()="A.4.1"]]/td[3]//text()').get().strip()
         item['Sponsor'] = response.xpath('//tr[td[1][normalize-space()="B.1.1"]]/td[3]//text()').get().strip()
-        item['condition'] = "\n".join(response.xpath('//tr[td[1][normalize-space()="E.1.1"]]/td[3]/table//td/text()').getall()).strip()
+        item['therapeutic_area'] = response.xpath('//tr[td[1][normalize-space()="E.1.1.2"]]/td[3]//text()').get().strip()
+        item['condition'] = [i.strip() for i in response.xpath('//tr[td[1][normalize-space()="E.1.1"]]/td[3]/table//td/text()').getall()]
         item['Disease'] = json.dumps({
             k: v for k, v in zip(
                 [i.strip() for i in response.xpath('//tr[td[1][contains(., "E.1.2")]]/td[2]/text()').getall()],

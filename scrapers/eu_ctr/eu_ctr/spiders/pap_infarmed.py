@@ -1,3 +1,4 @@
+import pandas as pd
 import scrapy
 from scrapy_playwright.page import PageMethod
 
@@ -64,4 +65,40 @@ class PapInfarmedSpider(scrapy.Spider):
                     field = header_to_field.get(header)
                     if field:
                         item[field] = cell
+
+                # Processar 'cond_observ'
+                if 'PAP ativo' in item.get('cond_observ', ''):
+                    item['PAP_act'] = True
+                else:
+                    item['PAP_act'] = False
+
+                cond_observ = item.get('cond_observ', '')
+                if 'com custos' in cond_observ:
+                    item['c_custos'] = True
+                elif 'sem custos' in cond_observ:
+                    item['c_custos'] = False
+                else:
+                    item['c_custos'] = pd.NA
+
+                decisao = item.get('decisao', '')
+                if 'indefer' in decisao.lower():
+                    item['deferimento'] = False
+                elif 'defer' in decisao.lower():
+                    item['deferimento'] = True
+                else:
+                    item['deferimento'] = pd.NA
+
+                # Processar 'n_doentes'
+                try:
+                    if '/' in item['n_doentes']:
+                        item['recurr_n_dtes'] = item['n_doentes'].split('/')[-1]
+                        item['n_doentes'] = int(item['n_doentes'].split('/')[0])
+                    else:
+                        item['n_doentes'] = int(item['n_doentes'])
+                except (ValueError, TypeError):
+                    self.logger.warning(f"Erro ao processar 'n_doentes': {item.get('n_doentes', '')}")
+                    item['n_doentes'] = pd.NA
+
+                # Passar item processado
                 yield item
+

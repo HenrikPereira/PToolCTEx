@@ -22,10 +22,11 @@ class ParquetPipeline:
     def process_item(self, item, spider):
         # Append each item (converted to a dict) to the list
         self.items.append(dict(item))
+
         return item
 
     def close_spider(self, spider):
-        df = pd.DataFrame(self.items)
+        df = pd.DataFrame(self.items).convert_dtypes()
 
         if spider.name == 'trials':
             self.output_file = os.path.join(self.output_folder, 'trials.parquet')

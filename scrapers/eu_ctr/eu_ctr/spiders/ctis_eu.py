@@ -163,7 +163,7 @@ class CtisEuSpider(scrapy.Spider):
 
         item['title'] = _dict.get('ctTitle', '')
         item['eudract_nr'] = _dict.get('ctNumber', '')
-        item['nct_nr'] = None
+        # item['nct_nr'] = None
         item['trial_phase'] = data[
             'authorizedApplication'][
             'authorizedPartI'][
@@ -172,8 +172,8 @@ class CtisEuSpider(scrapy.Spider):
             'trialCategory'][
             'trialPhase']
         item['trial_phase_desc'] = _dict.get('trialPhase', '')
-        item['trial_design'] = None
-        item['trial_scope'] = None
+        # item['trial_design'] = None
+        # item['trial_scope'] = None
         item['start_date'] = data[
             'authorizedApplication'][
             'authorizedPartI'][
@@ -189,13 +189,24 @@ class CtisEuSpider(scrapy.Spider):
             'trialDuration'][
             'estimatedEndDate']
         item['Protocol'] = _dict.get('shortTitle', '')
-        item['Sponsor'] = _dict.get('sponsor', '')
-        item['Sponsor_type'] = _dict.get('sponsorType', '')
+        item['Sponsor'] = set(_dict.get('sponsor', ''))
+        item['Sponsor_type'] = set(_dict.get('sponsorType', ''))
         item['therapeutic_area'] = json.dumps(_dict.get('therapeuticAreas', ''))
         item['condition'] = _dict.get('conditions', '')
-        item['Disease'] = None
-        item['Age'] = _dict.get('ageGroup', '')
-        item['Gender'] = _dict.get('gender', '')
+        # item['Disease'] = None
+
+        age_dict = {
+            k.replace('_years'): True for k in _dict.get('ageGroups', [])
+        }
+        for k, v in age_dict.items():
+            item[f'Age_{k}'] = _dict.get('ageGroup', '')
+
+        gender_dict = {
+            'F': True if 'Female' in _dict.get('gender', '') else False,
+            'M': True if 'Male' in _dict.get('gender', '') else False,
+        }
+        for k, v in gender_dict.items():
+            item[f'Gender_{k}'] = v
 
         trial_info = data.get('authorizedApplication', {}) \
             .get('authorizedPartI', {}) \
@@ -207,6 +218,7 @@ class CtisEuSpider(scrapy.Spider):
             d.get('principalInclusionCriteria', '')
             for d in trial_info
         ]) if len(trial_info) > 0 else None
+
         trial_info = data.get('authorizedApplication', {}) \
             .get('authorizedPartI', {}) \
             .get('trialDetails', {}) \

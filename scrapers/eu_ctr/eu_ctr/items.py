@@ -8,18 +8,22 @@ import scrapy
 
 class PAPItem(scrapy.Item):
     Nome = scrapy.Field()
-
     DCI = scrapy.Field()
-
     decisao = scrapy.Field()
-
+    deferimento = scrapy.Field()
     data_decisao = scrapy.Field()
-
-    detalhes = scrapy.Field() # População alvo, indicação terapêutica aprovada ou indiferida
-
+    detalhes = scrapy.Field()  # População alvo, indicação terapêutica aprovada ou indiferida
+    PAP_act = scrapy.Field()
+    c_custos = scrapy.Field()
     n_doentes = scrapy.Field()
-
+    recurr_n_dtes = scrapy.Field()
     cond_observ = scrapy.Field()
+
+    def __setitem__(self, key, value):
+        # Se o campo não estiver definido, adiciona-o dinamicamente
+        if key not in self.fields:
+            self.fields[key] = scrapy.Field()
+        super().__setitem__(key, value)
 
 
 class TrialItem(scrapy.Item):
@@ -41,7 +45,8 @@ class TrialItem(scrapy.Item):
     condition = scrapy.Field()
     Disease = scrapy.Field()
     Age = scrapy.Field()
-    Gender = scrapy.Field()
+    Gender_F = scrapy.Field()
+    Gender_M = scrapy.Field()
     inclusion_crt = scrapy.Field()
     exclusion_crt = scrapy.Field()
     nr_enrolled = scrapy.Field()
@@ -50,4 +55,10 @@ class TrialItem(scrapy.Item):
     status = scrapy.Field()
     # Define um campo para armazenar outros detalhes extraídos (como um dicionário)
     details = scrapy.Field()
+
+    def __setitem__(self, key, value):
+        # Se o campo não estiver definido, adiciona-o dinamicamente
+        if key not in self.fields:
+            self.fields[key] = scrapy.Field()
+        super().__setitem__(key, value)
 

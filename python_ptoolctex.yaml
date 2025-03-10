@@ -20,6 +20,9 @@ dependencies:
   - scrapy
   - pip:
       - scrapy-playwright
+      - streamlit-option-menu
+      - streamlit-extras
+      - streamlit_plotly_events
 
 # conda env create -f python_ptoolctex.yaml
 # conda env update -f python_ptoolctex.yaml --prune

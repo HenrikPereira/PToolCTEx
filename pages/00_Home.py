@@ -30,5 +30,12 @@ st.write("""
     specific interventions.
     
 """)
+
+with st.sidebar:
+    with st.expander("Updater"):
+        st.button("European CT")
+        st.button("USA CT")
+        st.button("INFARMED PAPs")
+
 with bottom():
     badge(type='github', name='HenrikPereira/PToolCTEx')

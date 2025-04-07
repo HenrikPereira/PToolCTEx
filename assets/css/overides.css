@@ -12,6 +12,8 @@ div[data-testid="stVerticalBlock"] div:has(div.fixed-header) {
     top: 0.125rem;
     z-index: 99999999999;
     background-image: linear-gradient(to bottom, #E6EAF1 0%, #E6EAF1 75%, transparent);
+    width: 90%;
+    padding-left: 1rem;
 }
 
 /*div[data-testid='stSidebarHeader'] {*/

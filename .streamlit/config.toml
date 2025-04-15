@@ -1,0 +1,16 @@
+[server]
+# headless = true
+runOnSave = true
+allowRunOnSave = true
+fileWatcherType = "auto"
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base='light'
+primaryColor="800000"
+backgroundColor="#E6EAF1"
+#backgroundColor="#BDC4C7"
+secondaryBackgroundColor="#69777D"
+textColor="#000000"

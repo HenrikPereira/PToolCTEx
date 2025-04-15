@@ -1,0 +1,31 @@
+name: ptoolctex
+channels:
+  - conda-forge
+  - plotly
+  - defaults
+dependencies:
+  - python>=3.11
+  - pandas
+  - openpyxl
+  - duckdb
+  - pyarrow
+  - numpy
+  - scikit-learn
+  - xgboost
+  - scipy
+  - statsmodels
+  - pingouin
+  - plotly
+  - seaborn
+  - streamlit
+  - scrapy
+  - jupyter
+  - ipywidgets
+  - pip:
+      - scrapy-playwright
+      - streamlit-option-menu
+      - streamlit-extras
+
+# pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# conda env create -f python_ptoolctex.yaml
+# conda env update -f python_ptoolctex.yaml --prune

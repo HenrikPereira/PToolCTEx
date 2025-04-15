@@ -1,0 +1,21 @@
+/* Seletor CSS baseado no atributo data-baseweb */
+div[data-baseweb="select"] * {
+    font-size: 9pt !important;
+}
+
+li[role="option"] * {
+    font-size: 9pt !important;
+}
+
+div[data-testid="stVerticalBlock"] div:has(div.fixed-header) {
+    position: sticky;
+    top: 0.125rem;
+    z-index: 99999999999;
+    background-image: linear-gradient(to bottom, #E6EAF1 0%, #E6EAF1 75%, transparent);
+    width: 90%;
+    padding-left: 1rem;
+}
+
+/*div[data-testid='stSidebarHeader'] {*/
+/*    padding: 0rem;*/
+/*}*/

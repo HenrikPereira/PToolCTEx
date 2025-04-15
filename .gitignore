@@ -1,0 +1,64 @@
+# Arquivos gerados pelo sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de log
+*.log
+logs/
+*.out
+
+# Configurações do sistema IDE/Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Dependências
+node_modules/
+bower_components/
+vendor/
+
+# Compilação
+*.class
+*.o
+*.out
+*.so
+*.exe
+/build/
+/dist/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.venv/
+
+# Arquivos de banco de dados/credenciais
+*.sqlite3
+*.db
+*.env
+*.key
+
+# Ambientes de deploy/teste
+/env/
+/coverage/
+/.installed.cfg
+
+# Arquivos temporários
+*.swp
+*~
+*.tmp
+*.bak
+*.old
+
+# Arquivos específicos de linguagens ou frameworks (exemplo para Python/Django)
+*.migrations/
+settings_local.py
+
+# Arquivos de container
+docker-compose.override.yml
+.env.*.local

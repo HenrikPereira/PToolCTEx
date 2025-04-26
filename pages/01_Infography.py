@@ -279,8 +279,69 @@ with infograph_tabs[2]:
 
 
 with infograph_tabs[3]:
-    st.header("Infarmed/PAP")
-    st.write("General information about the presented DCI.")
-    st.write("**Temporal Trend:** Chart of evolution of studies/decisions (Placeholder)")
-    st.write("**List of DCI:** List with links to the studies/decisions (Placeholder)")
-    st.write("**Filters:** Accepted/Rejected, Decision status, Year (Placeholder)")
+    st.header("Early Access Programs (Infarmed)")
+
+    # Load PAP dataset
+    pap_path = os.path.join("sources", "pap_clean.parquet")
+    try:
+        pap_df = pd.read_parquet(pap_path)
+    except Exception as e:
+        st.error(f"Error loading PAP data: {e}")
+        st.stop()
+
+    # Filters
+    st.subheader("🔎 Filters")
+    colf1, colf2, colf3, colf4 = st.columns(4)
+
+    anos = pap_df['ano_decisao'].dropna().sort_values().unique()
+    ano_sel = colf1.multiselect("Year of Decision", options=anos, default=anos)
+
+    decisao_sel = colf2.multiselect("Decision", options=pap_df['decisao'].dropna().unique(), default=pap_df['decisao'].dropna().unique())
+
+    pap_act_sel = colf3.selectbox("PAP Active?", options=["Todos", "Ativo", "Inativo"])
+
+    custos_sel = colf4.selectbox("With costs?", options=["Todos", "Com custos", "Sem custos"])
+
+    # Applying Filters
+    df_filtered = pap_df[
+        (pap_df['ano_decisao'].isin(ano_sel)) &
+        (pap_df['decisao'].isin(decisao_sel))
+        ]
+    if pap_act_sel != "Todos":
+        df_filtered = df_filtered[df_filtered['PAP_act'] == (pap_act_sel == "Ativo")]
+    if custos_sel != "Todos":
+        df_filtered = df_filtered[df_filtered['c_custos'] == (custos_sel == "Com custos")]
+
+    # General PAP KPIs
+    st.subheader("Overview of the PAP Programs")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Programs", f"{len(df_filtered):,}")
+    col2.metric("% Approved", f"{(df_filtered['decisao'].value_counts(normalize=True).get('Deferido', 0)*100):.1f}%")
+    col3.metric("Active Programs", int(df_filtered['PAP_act'].sum()))
+    col4.metric("With Costs", int(df_filtered['c_custos'].sum()))
+
+    # Temporal trend
+    st.subheader("Temporal Trend of PAP Decisions")
+    yearly_counts = df_filtered['ano_decisao'].value_counts().sort_index()
+    fig = px.line(x=yearly_counts.index, y=yearly_counts.values, markers=True, labels={'x': 'Year', 'y': 'No. of decisions'})
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Distribution of decision types
+    st.subheader("Distribution of decision types")
+    decision_counts = df_filtered['decisao'].value_counts()
+    fig = px.pie(values=decision_counts.values, names=decision_counts.index, hole=0.4)
+    st.plotly_chart(fig, use_container_width=True)
+
+    # TOP DCIs
+    st.subheader("Programs - Top INNs (International Non-proprietary Names)")
+    top_dcis = df_filtered['DCI'].value_counts().head(10).reset_index()
+    top_dcis.columns = ['INN', 'Total']
+    fig = px.bar(top_dcis, x="INN", y="Total", text="Total")
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Table & Download
+    with st.expander("Table with PAP data", expanded=True):
+        st.dataframe(df_filtered[['Nome', 'DCI', 'decisao', 'data_decisao', 'n_doentes', 'PAP_act', 'c_custos']].sort_values(by='data_decisao', ascending=False))
+
+        csv = df_filtered.to_csv(index=False).encode('utf-8')
+        st.download_button("📥 Download CSV", csv, "early_access_programs.csv", "text/csv")

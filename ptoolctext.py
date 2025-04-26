@@ -17,13 +17,13 @@ infography = st.Page("pages/01_Infography.py", title="Infography", icon="📊")
 
 researcher = st.Page("pages/02_Researcher.py", title="Researcher", icon="🔬")
 
-clinic = st.Page("pages/03_Clinician.py", title="Clinician", icon="🩺")
+#clinic = st.Page("pages/03_Clinician.py", title="Clinician", icon="🩺")
 
 pg = st.navigation(
     {
         "Home": [home],
         "Infography": [infography],
-        "POV": [researcher, clinic],
+        "POV": [researcher],
     }
 )
 

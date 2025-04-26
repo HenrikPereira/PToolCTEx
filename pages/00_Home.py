@@ -29,6 +29,9 @@ st.write("""
     - **Clinician POV:** Interactive tool to find studies based on patient characteristics, conditions, or 
     specific interventions.
     
+    
+    Authors: Ana Mosalina, Henrique Pereira, Olívia Oliveira
+
 """)
 
 with st.sidebar:

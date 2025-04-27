@@ -73,10 +73,13 @@ with infograph_tabs[0]:
 
         # Selector for therapeutic areas (represented as 'therapeutic_area')
         if "therapeutic_area" in df.columns:
-            therapeutic_areas_options = sorted(df["therapeutic_area"].dropna().unique().tolist())
+            df['therapeutic_area'] = df['therapeutic_area'].apply(parse_list_str)
+
+            # Explode and Count each element frequency
+            ther_areas_exploded = df.explode('therapeutic_area')['therapeutic_area'].dropna()
             selected_therapeutic_areas = st.multiselect(
                 "Select Therapeutic Areas",
-                therapeutic_areas_options,
+                ther_areas_exploded,
                 default=[],
                 label_visibility="visible"
             )

@@ -34,9 +34,7 @@ except Exception as e:
 # Tabs Configuration
 researcher_tabs = st.tabs([
     "Tab 2.1: PICOTSS Framework",
-    "Tab 2.2: Observational Studies",
-    "Tab 2.3: Interventional Studies",
-    "Tab 2.4: Make my day"
+    "Tab 2.2: Make my day"
 ])
 
 # TAB 2.1: PICOTSS Framework
@@ -115,56 +113,8 @@ with researcher_tabs[0]:
         csv = df_filtered.to_csv(index=False).encode('utf-8')
         st.download_button("📥 Download CSV", csv, "filtered_studies.csv", "text/csv")
 
-# TAB 2.2: Observational Studies
-with researcher_tabs[1]:
-    st.header("Observational Studies")
-    df_obs = df[df['study_type'] == 'OBSERVATIONAL'].copy()
-    st.metric("Total Observational Studies", len(df_obs))
-
-    df_obs['therapeutic_area'] = df_obs['therapeutic_area'].apply(parse_list_str)
-    if condition_filter:
-        df_obs = df_obs[
-            df_obs['therapeutic_area'].apply(lambda x: any(condition_filter.lower() in str(i).lower() for i in x) if isinstance(x, list) else False)
-        ]
-
-    st.subheader("Table - Observational Studies")
-    with st.expander("Expand table", expanded=True):
-        st.dataframe(df_obs[['title', 'start_date', 'therapeutic_area', 'status']].sort_values(by='start_date', ascending=False))
-        csv_obs = df_obs.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Download CSV", csv_obs, "observational_studies.csv", "text/csv")
-
-# TAB 2.3: Interventional Studies
+# TAB 2.2: Make my day
 with researcher_tabs[2]:
-    st.header("Interventional Studies")
-    df_int = df[df['study_type'] == 'INTERVENTIONAL'].copy()
-    st.metric("Total Interventional Studies", len(df_int))
-    def derive_study_phase(row):
-        phases = []
-        if row['trial_Early_Phase_I']: phases.append("Early Phase I")
-        if row['trial_Phase_I']: phases.append("Phase I")
-        if row['trial_Phase_II']: phases.append("Phase II")
-        if row['trial_Phase_III']: phases.append("Phase III")
-        if row['trial_Phase_IV']: phases.append("Phase IV")
-        return "/".join(phases) if phases else "Not Available"
-
-    df_int['study_phase'] = df_int.apply(derive_study_phase, axis=1)
-
-
-    df_int['therapeutic_area'] = df_int['therapeutic_area'].apply(parse_list_str)
-    if condition_filter:
-        df_int = df_int[
-            df_int['therapeutic_area'].apply(lambda x: any(condition_filter.lower() in str(i).lower() for i in x) if isinstance(x, list) else False)
-        ]
-
-
-    st.subheader("Table - Interventional Studies")
-    with st.expander("Expand table", expanded=True):
-        st.dataframe(df_int[['title', 'start_date', 'therapeutic_area', 'study_phase', 'status']].sort_values(by='start_date', ascending=False))
-        csv_int = df_int.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Download CSV", csv_int, "interventional_studies.csv", "text/csv")
-
-# TAB 2.4: Make my day
-with researcher_tabs[3]:
     st.header("🔍 Make my day!")
     st.write('This section tries to match the User\'s desired clinical context to the best scoring entries in the '
              'Clinical Trials Database. '

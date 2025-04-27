@@ -43,14 +43,12 @@ style_metric_cards(border_left_color="#1f77b4")
 # Internal tabs for the Infographics section
 infograph_tabs = st.tabs([
     "Tab 1.1: Overview",
-    "Tab 1.2: Clinical Trials - EU",
-    "Tab 1.3: Clinical Trials - GOV",
-    "Tab 1.4: Infarmed/PAP"
+    "Tab 1.2: Infarmed/PAP"
 ])
 
 with infograph_tabs[0]:
     st.header("Overview")
-    st.write("General information about the presented data (brief description).")
+    st.write("General information about the presented data from clinical trials sources (EU and GOV).")
 
     # -------------------------------
     # Multiple selectors for filtering
@@ -87,14 +85,67 @@ with infograph_tabs[0]:
             st.warning("Column 'therapeutic_area' not available.")
             selected_therapeutic_areas = None
 
+        # Selector for interventions (represented as 'interventions')
+        if "interventions" in df.columns:
+            df['interventions'] = df['interventions'].apply(parse_list_str)
+
+            # Explode and Count each element frequency
+            interv_exploded = df.explode('interventions')['interventions'].dropna()
+            selected_interventions = st.multiselect(
+                "Select Interventions",
+                interv_exploded,
+                default=[],
+                label_visibility="visible"
+            )
+        else:
+            st.warning("Column 'interventions' not available.")
+            selected_interventions = None
+
     # Apply filters to DataFrame
     filtered_df = df.copy()
     if selected_study_types is not None and len(selected_study_types) > 0:
         filtered_df = filtered_df[filtered_df["study_type"].isin(selected_study_types)]
     if selected_therapeutic_areas is not None and len(selected_therapeutic_areas) > 0:
         filtered_df = filtered_df[filtered_df["therapeutic_area"].isin(selected_therapeutic_areas)]
+    if selected_interventions is not None and len(selected_interventions) > 0:
+        filtered_df = filtered_df[filtered_df["interventions"].isin(selected_interventions)]
 
     st.markdown("---")
+
+    # ─── Gender and Age ────────────────────────────────────────────────────
+    st.markdown("#### Participation by Gender and Age")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Female", int(df['Gender_F'].sum()))
+    col2.metric("Male", int(df['Gender_M'].sum()))
+    col3.metric("Children (0-17)", int(df['Age_0_17_years'].sum()))
+
+    # ─── Temporal Trend ──────────────────────────────────────────────────
+    st.subheader("Temporal trend of studies")
+    if "study_first_submitted_date" in filtered_df.columns:
+        filtered_df['study_first_submitted_date'] = pd.to_datetime(filtered_df['study_first_submitted_date'], errors='coerce')
+        # Group by year and count studies
+        trend = filtered_df.groupby(filtered_df['study_first_submitted_date'].dt.year).size().reset_index(name='count')
+        trend = trend.dropna()
+        fig_trend = px.line(trend, x='study_first_submitted_date', y='count',
+                            labels={"study_first_submitted_date": "Year", "count": "Number of Studies"},
+                            template="simple_white")
+        st.plotly_chart(fig_trend, use_container_width=True)
+    else:
+        st.write("Column 'study_first_submitted_date' not available.")
+
+    # ─── Therapeutic Areas ─────────────────────────────────────────────────────
+    st.subheader("Therapeutic Areas (Top 10)")
+
+    df['therapeutic_area'] = df['therapeutic_area'].apply(parse_list_str)
+
+    # Explode and Count each element frequency
+    ther_areas_exploded = df.explode('therapeutic_area')['therapeutic_area'].dropna()
+    top_areas = ther_areas_exploded.value_counts().head(10).reset_index()
+    top_areas.columns = ['Area', 'Total']
+
+    # Plot
+    fig = px.bar(top_areas, x="Area", y="Total", text="Total")
+    st.plotly_chart(fig, use_container_width=True)
 
     # ─── Study Phase ───────────────────────────────────────────────────────
     st.subheader("Distribution by Study Phase")
@@ -111,19 +162,12 @@ with infograph_tabs[0]:
     fig = px.bar(phase_counts, x="Phase", y="Total", text="Total")
     st.plotly_chart(fig, use_container_width=True)
 
-    # ─── Temporal Trend ──────────────────────────────────────────────────
-    st.subheader("Temporal trend of studies")
-    if "study_first_submitted_date" in filtered_df.columns:
-        filtered_df['study_first_submitted_date'] = pd.to_datetime(filtered_df['study_first_submitted_date'], errors='coerce')
-        # Group by year and count studies
-        trend = filtered_df.groupby(filtered_df['study_first_submitted_date'].dt.year).size().reset_index(name='count')
-        trend = trend.dropna()
-        fig_trend = px.line(trend, x='study_first_submitted_date', y='count',
-                            labels={"study_first_submitted_date": "Year", "count": "Number of Studies"},
-                            template="simple_white")
-        st.plotly_chart(fig_trend, use_container_width=True)
-    else:
-        st.write("Column 'study_first_submitted_date' not available.")
+    # ─── Sponsors ───────────────────────────────────────────────────────
+    st.markdown("#### Distribution by Sponsor")
+    sponsor_counts = df['Sponsor_type'].value_counts().head(10).reset_index()
+    sponsor_counts.columns = ['Sponsor type', 'Total']
+    st.plotly_chart(px.bar(sponsor_counts, x='Sponsor type', y='Total', text='Total'), use_container_width=True)
+
 
     col3, col4 = st.columns(2)
     # ─── Study Types ──────────────────────────────────────────────────
@@ -140,28 +184,47 @@ with infograph_tabs[0]:
 
     # ─── Blinding (MASKING) ──────────────────────────────────────────────────
     col4.write("Blinding Type (Masking)")
+
     masking_data = {
         "Open": df['masking_OPEN'].sum(skipna=True),
         "Single-blind": df['masking_SINGLE'].sum(skipna=True),
         "Double-blind": df['masking_DOUBLE'].sum(skipna=True),
     }
-    fig = px.pie(names=masking_data.keys(), values=masking_data.values(), hole=0.4)
-    col4.plotly_chart(fig, use_container_width=True)
+    masking_df = pd.DataFrame({
+        "masking_type": masking_data.keys(),
+        "count": masking_data.values()
+    })
 
-    # ─── Therapeutic Areas ─────────────────────────────────────────────────────
-    st.subheader("Therapeutic Areas (Top 10)")
+    fig_masking = px.bar(
+        masking_df,
+        y="masking_type",
+        x="count",
+        labels={"masking_type": "Blinding Type", "count": "Count"},
+        template="simple_white"
+    )
+    col4.plotly_chart(fig_masking, use_container_width=True)
 
-    df['therapeutic_area'] = df['therapeutic_area'].apply(parse_list_str)
+    # ─── Inclusion and Exclusion Criteria ──────────────────────────────────────
+    st.markdown("#### Studies with defined inclusion and exclusion criteria")
+    df['has_criteria'] = df[['inclusion_crt', 'exclusion_crt']].notna().any(axis=1)
+    crit_count = df['has_criteria'].value_counts().rename({True: 'Has criteria', False: 'No criteria'})
+    st.plotly_chart(px.pie(names=crit_count.index, values=crit_count.values, hole=0.4))
 
-    # Explode and Count each element frequency
-    ther_areas_exploded = df.explode('therapeutic_area')['therapeutic_area'].dropna()
-    top_areas = ther_areas_exploded.value_counts().head(10).reset_index()
-    top_areas.columns = ['Area', 'Total']
+    # ─── INTERVENTIONAL MODEL ───────────────────────────────────────────
+    st.markdown("#### Intervention model")
+    if 'intervention_model' in df.columns:
+        models = df['intervention_model'].value_counts().reset_index()
+        models.columns = ['Model', 'Total']
+        st.plotly_chart(px.bar(models, x='Model', y='Total', text='Total'))
 
-    # Plot
-    fig = px.bar(top_areas, x="Area", y="Total", text="Total")
-    st.plotly_chart(fig, use_container_width=True)
+    col3, col4 = st.columns(2)
 
+    # ─── KEYWORDS ──────────────────────────────────────────────────────
+    st.markdown("#### Top Keywords")
+    keywords = df['keywords'].dropna().apply(parse_list_str).explode()
+    top_kw = keywords.value_counts().head(10).reset_index()
+    top_kw.columns = ['Keyword', 'Total']
+    st.plotly_chart(px.bar(top_kw, x='Keyword', y='Total', text='Total'))
 
     # ─── DOWNLOAD ──────────────────────────────────────────────────────
     st.subheader("📥 Export table with all the studies")
@@ -185,98 +248,7 @@ with infograph_tabs[0]:
 
     st.markdown("---")
 
-
 with infograph_tabs[1]:
-    st.header("Clinical Trials - EU")
-    df_eu = df[df['source_dataset'] == 'clinicaltrials.eu'].copy()
-
-    st.markdown(f"**Total of EU clinical trials:** {len(df_eu):,}")
-
-    # Sponsors
-    st.markdown("#### Distribution by Sponsor")
-    sponsor_counts = df_eu['Sponsor_type'].value_counts().head(10).reset_index()
-    sponsor_counts.columns = ['Sponsor type', 'Total']
-    st.plotly_chart(px.bar(sponsor_counts, x='Sponsor type', y='Total', text='Total'), use_container_width=True)
-
-    # Status
-    st.markdown("#### Status of the Studies")
-    if 'status' in df_eu.columns:
-        status_counts = df_eu['status'].value_counts().reset_index()
-        status_counts.columns = ['Status', 'Total']
-        st.plotly_chart(px.pie(status_counts, names='Status', values='Total', hole=0.4), use_container_width=True)
-
-    # Phases
-    st.markdown("#### Studies by Phase")
-    phases = {
-        "I": df_eu['trial_Phase_I'].sum(),
-        "II": df_eu['trial_Phase_II'].sum(),
-        "III": df_eu['trial_Phase_III'].sum(),
-        "IV": df_eu['trial_Phase_IV'].sum(),
-    }
-    st.plotly_chart(px.bar(x=list(phases.keys()), y=list(phases.values()), labels={'x': 'Phase', 'y': 'Total'}))
-
-    # Temporal trend
-    st.markdown("#### Temporal trend of the studies")
-    df_eu['start_year'] = pd.to_datetime(df_eu['start_date'], errors='coerce').dt.year
-    yearly = df_eu['start_year'].value_counts().sort_index()
-    st.plotly_chart(px.line(x=yearly.index, y=yearly.values, labels={'x': 'Year', 'y': 'Number of Studies'}))
-
-    # Inclusion and Exclusion Criteria
-    st.markdown("#### Studies with defined inclusion and exclusion criteria")
-    df_eu['has_criteria'] = df_eu[['inclusion_crt', 'exclusion_crt']].notna().any(axis=1)
-    crit_count = df_eu['has_criteria'].value_counts().rename({True: 'Has criteria', False: 'No criteria'})
-    st.plotly_chart(px.pie(names=crit_count.index, values=crit_count.values, hole=0.4))
-
-
-with infograph_tabs[2]:
-    st.header("Clinical Trials - GOV")
-    df_gov = df[df['source_dataset'] == 'clinicaltrials.gov'].copy()
-
-    st.markdown(f"**Total of GOV clinical trials:** {len(df_gov):,}")
-
-    # Género e idade
-    st.markdown("#### Participation by Gender and Age")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Female", int(df_gov['Gender_F'].sum()))
-    col2.metric("Male", int(df_gov['Gender_M'].sum()))
-    col3.metric("Children (0-17)", int(df_gov['Age_0_17_years'].sum()))
-
-    # Type of Study
-    st.markdown("#### Study Type")
-    st.plotly_chart(px.pie(df_gov, names='study_type', title='Distribution by Type'))
-
-    # Intervention model
-    st.markdown("#### Intervention model")
-    if 'intervention_model' in df_gov.columns:
-        models = df_gov['intervention_model'].value_counts().reset_index()
-        models.columns = ['Model', 'Total']
-        st.plotly_chart(px.bar(models, x='Model', y='Total', text='Total'))
-
-    col3, col4 = st.columns(2)
-    # Masking
-    col3.markdown("#### Blinding Type")
-    mask_data = {
-        "Open": df_gov['masking_OPEN'].sum(skipna=True),
-        "Single-blind": df_gov['masking_SINGLE'].sum(skipna=True),
-        "Double-blind": df_gov['masking_DOUBLE'].sum(skipna=True),
-    }
-    col3.plotly_chart(px.pie(names=mask_data.keys(), values=mask_data.values(), hole=0.4, title="Masking"))
-
-    # Expanded access
-    col4.markdown("#### Studies with expanded access")
-    if 'has_expanded_access' in df_gov.columns:
-        access = df_gov['has_expanded_access'].value_counts().rename({True: 'Yes', False: 'No'})
-        col4.plotly_chart(px.pie(names=access.index, values=access.values, title="Expanded access"))
-
-    # Keywords
-    st.markdown("#### Top Keywords")
-    keywords = df_gov['keywords'].dropna().apply(parse_list_str).explode()
-    top_kw = keywords.value_counts().head(10).reset_index()
-    top_kw.columns = ['Keyword', 'Total']
-    st.plotly_chart(px.bar(top_kw, x='Keyword', y='Total', text='Total'))
-
-
-with infograph_tabs[3]:
     st.header("Early Access Programs (Infarmed)")
 
     # Load PAP dataset

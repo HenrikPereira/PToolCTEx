@@ -14,3 +14,5 @@ backgroundColor="#E6EAF1"
 #backgroundColor="#BDC4C7"
 secondaryBackgroundColor="#69777D"
 textColor="#000000"
+
+[secrets]

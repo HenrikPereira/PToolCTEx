@@ -1,17 +1,8 @@
 import streamlit as st
-import tomllib
-
-# function to load extra options and overrides
-@st.cache_data
-def load_extras():
-    with open(".streamlit/config.toml", "rb") as f:
-        _config = tomllib.load(f)
-    with open(".streamlit/options.toml", "rb") as f:
-        _options = tomllib.load(f)
-
-    return _config, _options
 
 home = st.Page("pages/00_Home.py", title="Home | PToolCTex", icon="🏠", default=True)
+
+settings = st.Page("pages/XX_Settings.py", title="Settings", icon="📦")
 
 infography = st.Page("pages/01_Infography.py", title="Infography", icon="📊")
 
@@ -21,7 +12,7 @@ researcher = st.Page("pages/02_Researcher.py", title="Researcher", icon="🔬")
 
 pg = st.navigation(
     {
-        "Home": [home],
+        "Home": [home, settings],
         "Infography": [infography],
         "POV": [researcher],
     }

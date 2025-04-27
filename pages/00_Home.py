@@ -2,11 +2,7 @@ import streamlit as st
 from streamlit_extras.badges import badge
 from streamlit_extras.bottom_container import bottom
 
-st.set_page_config(
-    page_title="PToolCTex",
-    page_icon="🏠",  # Ícone para a página inicial
-    layout="wide"
-)
+st.set_page_config(layout="wide")
 
 ### Custom CSS for the sticky header
 with open('assets/css/overides.css') as f:
@@ -14,7 +10,7 @@ with open('assets/css/overides.css') as f:
 
 # Página principal - Home
 st.image('assets/Main.png')
-st.title("Welcome to PToolCText")
+st.title("Welcome to PToolCTex")
 st.write("""
     A project issued for **LAB-HIDA**.
     
@@ -34,11 +30,11 @@ st.write("""
 
 """)
 
-with st.sidebar:
-    with st.expander("Updater"):
-        st.button("European CT")
-        st.button("USA CT")
-        st.button("INFARMED PAPs")
+# with st.sidebar:
+#     with st.expander("Updater"):
+#         st.button("European CT")
+#         st.button("USA CT")
+#         st.button("INFARMED PAPs")
 
 with bottom():
     badge(type='github', name='HenrikPereira/PToolCTEx')

@@ -3,15 +3,9 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 from streamlit_extras.metric_cards import style_metric_cards
-from utils.parsing import parse_list_str
+from utils.auxiliary import parse_list_str, load_extras
 
-from ptoolctext import load_extras
-
-st.set_page_config(
-    page_title="Infography",
-    page_icon="📊",  # Ícone para a página de Infográficos
-    layout="wide"
-)
+st.set_page_config(layout="wide")
 
 # Define the data file path (assuming the notebook is running from the "etl" folder)
 data_path = os.path.join("sources", "full_df.parquet")
@@ -33,7 +27,8 @@ with open('assets/css/overides.css') as f:
 
 config, options = load_extras()
 
-st.title("Infography")
+st.title("Infography & Insights")
+st.subheader("Data from Clinical Trials and Early Access Programs (Infarmed/PAP)")
 st.write("This area presents a visual representation of the data.")
 
 ### Main metrics

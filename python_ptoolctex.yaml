@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python>=3.11
   - pandas
+  - python-decouple
   - openpyxl
   - duckdb
   - pyarrow
@@ -21,11 +22,12 @@ dependencies:
   - scrapy
   - jupyter
   - ipywidgets
+  - groq
+  - protobuf=3.20.3
   - pip:
       - scrapy-playwright
       - streamlit-option-menu
       - streamlit-extras
 
-# pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 # conda env create -f python_ptoolctex.yaml
 # conda env update -f python_ptoolctex.yaml --prune

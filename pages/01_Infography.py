@@ -32,13 +32,15 @@ st.subheader("Data from Clinical Trials and Early Access Programs (Infarmed/PAP)
 st.write("This area presents a visual representation of the data.")
 
 ### Main metrics
+st.markdown("### 🔢 Key Metrics")
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total of Studies", f"{len(df):,}")
+col1.metric("Total Studies", f"{len(df):,}")
 col2.metric("Total of Participants", f"{int(df['enrollment'].sum(skipna=True)):,}")
-col3.metric("Randomized Clinical Trials", df['trial_design_Randomised'].sum(skipna=True))
-col4.metric("Number of Sources", df['source_dataset'].nunique())
+col3.metric("Recruiting", df['status'].str.contains("Recruiting", na=False).sum())
+col4.metric("Expanded Access", df['has_expanded_access'].sum(skipna=True))
+style_metric_cards()
 
-style_metric_cards(border_left_color="#1f77b4")
+st.divider()
 
 # Internal tabs for the Infographics section
 infograph_tabs = st.tabs([
@@ -133,19 +135,21 @@ with infograph_tabs[0]:
     else:
         st.write("Column 'study_first_submitted_date' not available.")
 
+    st.divider()
+
     # ─── Therapeutic Areas ─────────────────────────────────────────────────────
-    st.subheader("Therapeutic Areas (Top 10)")
+    st.markdown("### 🧬 Therapeutic Areas Overview")
 
     df['therapeutic_area'] = df['therapeutic_area'].apply(parse_list_str)
-
-    # Explode and Count each element frequency
     ther_areas_exploded = df.explode('therapeutic_area')['therapeutic_area'].dropna()
-    top_areas = ther_areas_exploded.value_counts().head(10).reset_index()
-    top_areas.columns = ['Area', 'Total']
+    top_areas_df = ther_areas_exploded.value_counts().reset_index()
+    top_areas_df.columns = ['Área', 'Total']
 
-    # Plot
-    fig = px.bar(top_areas, x="Area", y="Total", text="Total")
+    fig = px.treemap(top_areas_df.head(30), path=["Área"], values="Total", color="Total",
+                     color_continuous_scale="Blues")
     st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
 
     # ─── Study Phase ───────────────────────────────────────────────────────
     st.subheader("Distribution by Study Phase")
@@ -162,13 +166,16 @@ with infograph_tabs[0]:
     fig = px.bar(phase_counts, x="Phase", y="Total", text="Total")
     st.plotly_chart(fig, use_container_width=True)
 
+    st.divider()
     # ─── Sponsors ───────────────────────────────────────────────────────
     st.markdown("#### Distribution by Sponsor")
     sponsor_counts = df['Sponsor_type'].value_counts().head(10).reset_index()
     sponsor_counts.columns = ['Sponsor type', 'Total']
     st.plotly_chart(px.bar(sponsor_counts, x='Sponsor type', y='Total', text='Total'), use_container_width=True)
 
+    st.divider()
 
+    st.markdown("### Study and Blinding Types Distribution")
     col3, col4 = st.columns(2)
     # ─── Study Types ──────────────────────────────────────────────────
     col3.write("Study types")
@@ -177,13 +184,13 @@ with infograph_tabs[0]:
         study_type_counts.columns = ["study_type", "count"]
         fig_study = px.bar(study_type_counts, y="study_type", x="count",
                            labels={"study_type": "Study Type", "count": "Count"},
-                           template="simple_white",)
+                           template="simple_white", color="count", color_continuous_scale="Teal")
         col3.plotly_chart(fig_study, use_container_width=True)
     else:
         col3.write("Column 'study_type' not available.")
 
     # ─── Blinding (MASKING) ──────────────────────────────────────────────────
-    col4.write("Blinding Type (Masking)")
+    col4.write("Blinding type (Masking)")
 
     masking_data = {
         "Open": df['masking_OPEN'].sum(skipna=True),
@@ -200,9 +207,11 @@ with infograph_tabs[0]:
         y="masking_type",
         x="count",
         labels={"masking_type": "Blinding Type", "count": "Count"},
-        template="simple_white"
+        template="simple_white", color="count", color_continuous_scale="Reds"
     )
     col4.plotly_chart(fig_masking, use_container_width=True)
+
+    st.divider()
 
     # ─── Inclusion and Exclusion Criteria ──────────────────────────────────────
     st.markdown("#### Studies with defined inclusion and exclusion criteria")
@@ -210,7 +219,9 @@ with infograph_tabs[0]:
     crit_count = df['has_criteria'].value_counts().rename({True: 'Has criteria', False: 'No criteria'})
     st.plotly_chart(px.pie(names=crit_count.index, values=crit_count.values, hole=0.4))
 
-    # ─── INTERVENTIONAL MODEL ───────────────────────────────────────────
+    st.divider()
+
+    # ─── Interventional Model ───────────────────────────────────────────
     st.markdown("#### Intervention model")
     if 'intervention_model' in df.columns:
         models = df['intervention_model'].value_counts().reset_index()
@@ -219,14 +230,32 @@ with infograph_tabs[0]:
 
     col3, col4 = st.columns(2)
 
-    # ─── KEYWORDS ──────────────────────────────────────────────────────
+    st.divider()
+
+    # ─── Enrollment Distribution ─────────────────────────────────────────────────
+    st.markdown("### Enrollment Trends Over Time")
+
+    df['enrollment'] = pd.to_numeric(df['enrollment'], errors='coerce')
+    df['start_year'] = pd.to_datetime(df['start_date'], errors='coerce').dt.year
+    scatter_df = df[['start_year', 'enrollment']].dropna()
+    fig_enroll = px.scatter(scatter_df, x="start_year", y="enrollment",
+                            size="enrollment", color="start_year",
+                            labels={"start_year": "Start Year", "enrollment": "Enrollment"},
+                            template="plotly_white")
+    st.plotly_chart(fig_enroll, use_container_width=True)
+
+    st.divider()
+
+    # ─── Keywords ──────────────────────────────────────────────────────
     st.markdown("#### Top Keywords")
     keywords = df['keywords'].dropna().apply(parse_list_str).explode()
     top_kw = keywords.value_counts().head(10).reset_index()
     top_kw.columns = ['Keyword', 'Total']
     st.plotly_chart(px.bar(top_kw, x='Keyword', y='Total', text='Total'))
 
-    # ─── DOWNLOAD ──────────────────────────────────────────────────────
+    st.divider()
+
+    # ─── Download ──────────────────────────────────────────────────────
     st.subheader("📥 Export table with all the studies")
 
     cols_to_show = ['title', 'start_date', 'source_dataset', 'therapeutic_area', 'enrollment']

@@ -114,7 +114,7 @@ with researcher_tabs[0]:
         st.download_button("📥 Download CSV", csv, "filtered_studies.csv", "text/csv")
 
 # TAB 2.2: Make my day
-with researcher_tabs[2]:
+with researcher_tabs[1]:
     st.header("🔍 Make my day!")
     st.write('This section tries to match the User\'s desired clinical context to the best scoring entries in the '
              'Clinical Trials Database. '
@@ -130,13 +130,21 @@ with researcher_tabs[2]:
                 'Chunks when prefiltering', min_value=1, max_value=1000, value=500,
                 key='prefilter_chunk_size'
             )
-            st.number_input(
-                'Proportion of dataset to preselect', min_value=0.1, max_value=1.0, value=0.5,
+            st.slider(
+                'Proportion of dataset to preselect', min_value=0.01, max_value=1.0, value=0.75, step=0.01,
                 key='prefilter_proportion'
             )
-            st.number_input(
-                'Certainty cutoff', min_value=0.1, max_value=1.0, value=2/3,
+            st.slider(
+                'Certainty cutoff', min_value=0.01, max_value=1.0, value=2/3, step=0.01,
                 key='certainty_cutoff'
+            )
+            st.slider(
+                'Prefilter "Temperature"', min_value=0.01, max_value=1.0, value=0.1, step=0.01,
+                key='prefilter_temperature'
+            )
+            st.slider(
+                'Final "Temperature"', min_value=0.01, max_value=1.0, value=1.0, step=0.01,
+                key='final_temperature'
             )
 
         with cols[1]:
@@ -153,12 +161,16 @@ with researcher_tabs[2]:
             cols = st.columns(2)
             with cols[0]:
                 st.selectbox(
-                    'LLM for preanalysis of Clinical Trial Database', options=avail_models['id'].to_list(), index=2,
+                    'LLM for preanalysis of Clinical Trial Database',
+                    options=avail_models['id'].to_list(),
+                    index=avail_models['id'].to_list().index('llama-3.1-8b-instant'),
                     key='prefilter_model'
                 )
             with cols[1]:
                 st.selectbox(
-                    'LLM for final inference', options=avail_models['id'].to_list(), index=6,
+                    'LLM for final inference',
+                    options=avail_models['id'].to_list(),
+                    index=avail_models['id'].to_list().index('deepseek-r1-distill-llama-70b'),
                     key='final_model'
                 )
 
@@ -184,14 +196,24 @@ with researcher_tabs[2]:
     if user_query and submit_button:
         st.write(f"Searching for studies related to: **{user_query}**")
 
-        st.write(get_trial_recommendation_groq(
-            user_query,
-            CT_data,
-            chunk_size=st.session_state.prefilter_chunk_size,
-            type_trials=st.session_state.prefilter_type_trials,
-            proportion=st.session_state.prefilter_proportion,
-            certainty_cutoff=st.session_state.certainty_cutoff,
-        ))
+        with st.spinner("... Making the AI do the work for you ..."):
+            st.markdown("But remember... in the so called *'Human in the loop'*, "
+                        "you **ARE the HUMAN**!")
+            st.markdown("...So take it with a grain of salt...")
+            resultado = get_trial_recommendation_groq(
+                user_query,
+                CT_data,
+                chunk_size=st.session_state.prefilter_chunk_size,
+                type_trials=st.session_state.prefilter_type_trials,
+                proportion=st.session_state.prefilter_proportion,
+                certainty_cutoff=st.session_state.certainty_cutoff,
+                temperature_pf=st.session_state.prefilter_temperature,
+                temperature_f=st.session_state.final_temperature,
+            )
+        if isinstance(resultado, pd.DataFrame):
+            st.write(resultado)
+        else:
+            st.write(f"No relevant results found...")
 
         # st.subheader(f"🔎  {len(matched_df):,} studies found")
         # st.dataframe(matched_df[['title', 'start_date', 'therapeutic_area', 'interventions', 'study_type', 'status']].sort_values(by='start_date', ascending=False))

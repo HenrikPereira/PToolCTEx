@@ -167,14 +167,15 @@ def format_system_final_role_template(trials_context):
         The Clinical Trial Database details: {trials_context}
     '''
 
-@st.cache_data(show_spinner=True)
 def get_trial_recommendation_groq(
         prompt,
         trials_df,
         chunk_size=100,
         type_trials='recent',
         proportion=0.5,
-        certainty_cutoff=0.5
+        certainty_cutoff=0.5,
+        temperature_pf=0.1,
+        temperature_f=1,
 ):
     """
     Utiliza a API da Groq para enviar uma mensagem de reasoning que combine os dados dos ensaios clínicos
@@ -214,11 +215,16 @@ def get_trial_recommendation_groq(
                 }
             ],
             # response_format = {"type": "json_object"}, # Add this response format to configure JSON mode
-            temperature=0.1,
+            top_p=temperature_pf,
             seed=123,
         )
 
-        parte = completion_filter.choices[0].message.content.split('```')[-2]
+        # print('AQUI!!!              ', completion_filter.choices[0].message.content)
+        try:
+            parte = completion_filter.choices[0].message.content.split('```')[-2]
+        except Exception as e:
+            print(e)
+            parte = completion_filter.choices[0].message.content
         json_str = parte.strip().replace('json', '')
 
         try:
@@ -233,7 +239,7 @@ def get_trial_recommendation_groq(
 
     df = trials_df.loc[(
         pd.concat(prefiltered)
-        .query('certainty > @certainty_cutoff')
+        .query('certainty >= @certainty_cutoff')
     ).database_index, :]
 
     trials_context = prepare_trials_context(df, max_trials=len(df), type_trials=type_trials)
@@ -243,7 +249,7 @@ def get_trial_recommendation_groq(
 
         # Inicializa o cliente Groq e envia a requisição conforme a documentação
         client = Groq(api_key=st.secrets.get('GROQ', '').get('API_KEY'))
-        model=st.session_state.final_model
+        model = st.session_state.final_model
 
         completion = client.chat.completions.create(
             model=model,
@@ -258,15 +264,24 @@ def get_trial_recommendation_groq(
                 }
             ],
             # response_format = {"type": "json_object"}, # Add this response format to configure JSON mode
-            temperature=1,
+            temperature=temperature_f,
             seed=123,
         )
 
-        parte = completion.choices[0].message.content.split('```')[-2]
+        # print('AQUI!!!              ', completion_filter.choices[0].message.content)
+        try:
+            parte = completion.choices[0].message.content.split('```')[-2]
+        except Exception as e:
+            print(e)
+            parte = completion.choices[0].message.content
         json_str = parte.strip().replace('json', '')
 
         try:
-            pref = pd.DataFrame(json.loads(json_str))
+            pref = (
+                pd.DataFrame(json.loads(json_str))
+                .query('certainty >= @certainty_cutoff')
+            )
+            print(pref.info)
             if pref.shape[0] > 0:
                 return pref
             return None

@@ -16,6 +16,10 @@ div[data-testid="stVerticalBlock"] div:has(div.fixed-header) {
     padding-left: 1rem;
 }
 
+/*div[data-baseweb="select"] {
+    color: #ffffff;
+}*/
+
 /*div[data-testid='stSidebarHeader'] {*/
 /*    padding: 0rem;*/
 /*}*/

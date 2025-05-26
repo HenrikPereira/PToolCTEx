@@ -9,10 +9,10 @@ gatherUsageStats = false
 
 [theme]
 base='light'
-primaryColor="800000"
+primaryColor="#aa0000"
 backgroundColor="#E6EAF1"
 #backgroundColor="#BDC4C7"
-secondaryBackgroundColor="#69777D"
+secondaryBackgroundColor="#8c9cb8"
 textColor="#000000"
 
 [secrets]

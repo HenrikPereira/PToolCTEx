@@ -14,7 +14,7 @@ st.title("Welcome to PToolCTex")
 st.write("""
     A project issued for **LAB-HIDA**.
     
-    ***PhD programme HEADS** of **FMUP** in collaboration with **CINTESIS***
+    ***PhD programme HEADS** of **FMUP** in collaboration with **CINTESIS** and **RISE Health***
     
     ## **Objective**
     
@@ -22,8 +22,6 @@ st.write("""
     Use the menu on the left to navigate through the available sections:
     - **Infography:** View information and trends from the studies, either in EDA mode or in a visual representation.
     - **Researcher POV:** Interactive tool to locate specific studies based on research questions.
-    - **Clinician POV:** Interactive tool to find studies based on patient characteristics, conditions, or 
-    specific interventions.
     
     
     Authors: Ana Mosalina, Henrique Pereira, Olívia Oliveira

@@ -36,7 +36,7 @@ st.markdown("### 🔢 Key Metrics")
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Studies", f"{len(df):,}")
 col2.metric("Total of Participants", f"{int(df['enrollment'].sum(skipna=True)):,}")
-col3.metric("Recruiting", df['status'].str.contains("Recruiting", na=False).sum())
+col3.metric("Recruiting", df['status'].isin(["RECRUITING", "4"]).count())
 col4.metric("Expanded Access", df['has_expanded_access'].sum(skipna=True))
 style_metric_cards()
 
@@ -104,27 +104,28 @@ with infograph_tabs[0]:
         )]
 
     st.markdown("---")
+    col1, col2 = st.columns([0.2, 0.8])
+    with col1:
+        # ─── Gender and Age ────────────────────────────────────────────────────
+        st.markdown("#### Participation by Gender and Age")
+        st.metric("Female", int(filtered_df['Gender_F'].sum()))
+        st.metric("Male", int(filtered_df['Gender_M'].sum()))
+        st.metric("Children (0-17)", int(filtered_df['Age_0_17_years'].sum()))
 
-    # ─── Gender and Age ────────────────────────────────────────────────────
-    st.markdown("#### Participation by Gender and Age")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Female", int(filtered_df['Gender_F'].sum()))
-    col2.metric("Male", int(filtered_df['Gender_M'].sum()))
-    col3.metric("Children (0-17)", int(filtered_df['Age_0_17_years'].sum()))
-
-    # ─── Temporal Trend ──────────────────────────────────────────────────
-    st.subheader("Temporal trend of studies")
-    if "study_first_submitted_date" in filtered_df.columns:
-        filtered_df['study_first_submitted_date'] = pd.to_datetime(filtered_df['study_first_submitted_date'], errors='coerce')
-        # Group by year and count studies
-        trend = filtered_df.groupby(filtered_df['study_first_submitted_date'].dt.year).size().reset_index(name='count')
-        trend = trend.dropna()
-        fig_trend = px.line(trend, x='study_first_submitted_date', y='count',
-                            labels={"study_first_submitted_date": "Year", "count": "Number of Studies"},
-                            template="simple_white")
-        st.plotly_chart(fig_trend, use_container_width=True)
-    else:
-        st.write("Column 'study_first_submitted_date' not available.")
+    with col2:
+        # ─── Temporal Trend ──────────────────────────────────────────────────
+        st.subheader("Temporal trend of studies")
+        if "study_first_submitted_date" in filtered_df.columns:
+            filtered_df['study_first_submitted_date'] = pd.to_datetime(filtered_df['study_first_submitted_date'], errors='coerce')
+            # Group by year and count studies
+            trend = filtered_df.groupby(filtered_df['study_first_submitted_date'].dt.year).size().reset_index(name='count')
+            trend = trend.dropna()
+            fig_trend = px.line(trend, x='study_first_submitted_date', y='count',
+                                labels={"study_first_submitted_date": "Year", "count": "Number of Studies"},
+                                template="simple_white")
+            st.plotly_chart(fig_trend, use_container_width=True)
+        else:
+            st.write("Column 'study_first_submitted_date' not available.")
 
     st.divider()
 
@@ -142,27 +143,28 @@ with infograph_tabs[0]:
 
     st.divider()
 
-    # ─── Study Phase ───────────────────────────────────────────────────────
-    st.subheader("Distribution by Study Phase")
-    phase_counts = pd.DataFrame({
-        "Phase": ["Early I", "I", "II", "III", "IV"],
-        "Total": [
-            filtered_df['trial_Early_Phase_I'].sum(skipna=True),
-            filtered_df['trial_Phase_I'].sum(skipna=True),
-            filtered_df['trial_Phase_II'].sum(skipna=True),
-            filtered_df['trial_Phase_III'].sum(skipna=True),
-            filtered_df['trial_Phase_IV'].sum(skipna=True),
-        ]
-    })
-    fig = px.bar(phase_counts, x="Phase", y="Total", text="Total")
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.divider()
-    # ─── Sponsors ───────────────────────────────────────────────────────
-    st.markdown("#### Distribution by Sponsor")
-    sponsor_counts = filtered_df['Sponsor_type'].value_counts().head(10).reset_index()
-    sponsor_counts.columns = ['Sponsor type', 'Total']
-    st.plotly_chart(px.bar(sponsor_counts, x='Sponsor type', y='Total', text='Total'), use_container_width=True)
+    col1, col2 = st.columns([0.4, 0.6])
+    with col1:
+        # ─── Study Phase ───────────────────────────────────────────────────────
+        st.subheader("Distribution by Study Phase")
+        phase_counts = pd.DataFrame({
+            "Phase": ["Early I", "I", "II", "III", "IV"],
+            "Total": [
+                filtered_df['trial_Early_Phase_I'].sum(skipna=True),
+                filtered_df['trial_Phase_I'].sum(skipna=True),
+                filtered_df['trial_Phase_II'].sum(skipna=True),
+                filtered_df['trial_Phase_III'].sum(skipna=True),
+                filtered_df['trial_Phase_IV'].sum(skipna=True),
+            ]
+        })
+        fig = px.bar(phase_counts, x="Phase", y="Total", text="Total")
+        st.plotly_chart(fig, use_container_width=True)
+    with col2:
+        # ─── Sponsors ───────────────────────────────────────────────────────
+        st.markdown("#### Distribution by Sponsor")
+        sponsor_counts = filtered_df['Sponsor_type'].value_counts().head(10).reset_index()
+        sponsor_counts.columns = ['Sponsor type', 'Total']
+        st.plotly_chart(px.bar(sponsor_counts, x='Sponsor type', y='Total', text='Total'), use_container_width=True)
 
     st.divider()
 
@@ -204,22 +206,20 @@ with infograph_tabs[0]:
 
     st.divider()
 
-    # ─── Inclusion and Exclusion Criteria ──────────────────────────────────────
-    st.markdown("#### Studies with defined inclusion and exclusion criteria")
-    filtered_df['has_criteria'] = filtered_df[['inclusion_crt', 'exclusion_crt']].notna().any(axis=1)
-    crit_count = filtered_df['has_criteria'].value_counts().rename({True: 'Has criteria', False: 'No criteria'})
-    st.plotly_chart(px.pie(names=crit_count.index, values=crit_count.values, hole=0.4))
-
-    st.divider()
-
-    # ─── Interventional Model ───────────────────────────────────────────
-    st.markdown("#### Intervention model")
-    if 'intervention_model' in filtered_df.columns:
-        models = filtered_df['intervention_model'].value_counts().reset_index()
-        models.columns = ['Model', 'Total']
-        st.plotly_chart(px.bar(models, x='Model', y='Total', text='Total'))
-
-    col3, col4 = st.columns(2)
+    col1, col2 = st.columns([0.3, 0.7])
+    with col1:
+        # ─── Inclusion and Exclusion Criteria ──────────────────────────────────────
+        st.markdown("#### Studies with defined inclusion and exclusion criteria")
+        filtered_df['has_criteria'] = filtered_df[['inclusion_crt', 'exclusion_crt']].notna().any(axis=1)
+        crit_count = filtered_df['has_criteria'].value_counts().rename({True: 'Has criteria', False: 'No criteria'})
+        st.plotly_chart(px.pie(names=crit_count.index, values=crit_count.values, hole=0.4))
+    with col2:
+        # ─── Interventional Model ───────────────────────────────────────────
+        st.markdown("#### Intervention model")
+        if 'intervention_model' in filtered_df.columns:
+            models = filtered_df['intervention_model'].value_counts().reset_index()
+            models.columns = ['Model', 'Total']
+            st.plotly_chart(px.bar(models, x='Model', y='Total', text='Total'))
 
     st.divider()
 
@@ -228,12 +228,17 @@ with infograph_tabs[0]:
 
     filtered_df['enrollment'] = pd.to_numeric(filtered_df['enrollment'], errors='coerce')
     filtered_df['start_year'] = pd.to_datetime(filtered_df['start_date'], errors='coerce').dt.year
-    scatter_df = filtered_df[['start_year', 'enrollment']].dropna()
-    fig_enroll = px.scatter(scatter_df, x="start_year", y="enrollment",
-                            size="enrollment", color="start_year",
-                            labels={"start_year": "Start Year", "enrollment": "Enrollment"},
-                            template="plotly_white")
-    st.plotly_chart(fig_enroll, use_container_width=True)
+    scatter_df = filtered_df.groupby(by='start_year', observed=True, as_index=False).agg(enrollment=('enrollment','sum'), total=('start_date','count'))
+
+    fig_enroll_bar = px.bar(
+        scatter_df,
+        x="start_year",
+        y="enrollment", color="total",
+        labels={"start_year": "Ano de Início", "enrollment": "Total de Matrículas"},
+        template="plotly_white",
+    )
+
+    st.plotly_chart(fig_enroll_bar, use_container_width=True)
 
     st.divider()
 

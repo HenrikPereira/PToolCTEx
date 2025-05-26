@@ -1,3 +1,4 @@
+import re
 import json
 import tomllib
 import streamlit as st
@@ -25,6 +26,26 @@ def parse_list_str(val):
         except Exception:
             return [val]
     return val
+
+def normalize_list_column(column):
+    all_items = []
+    for items in column.dropna():
+        if isinstance(items, list):
+            # Se for lista, aplicar a limpeza a cada item
+            all_items.extend([re.sub(r'\s+', ' ', str(i)).strip().lower() for i in items])
+        elif isinstance(items, str) and items.startswith('__list__'):
+            # Converter string de lista tipo __list__ para lista real
+            try:
+                parsed = ast.literal_eval(items[len('__list__'):])
+                if isinstance(parsed, list):
+                    all_items.extend([re.sub(r'\s+', ' ', str(i)).strip().lower() for i in parsed])
+            except:
+                all_items.append(items.strip().lower())
+        else:
+            all_items.append(re.sub(r'\s+', ' ', str(items)).strip().lower())
+
+    # Remover duplicados e ordenar
+    return sorted(set(all_items))
 
 @st.cache_data
 def load_df_parquet(path):

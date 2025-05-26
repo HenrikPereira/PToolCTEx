@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 from streamlit_extras.metric_cards import style_metric_cards
-from utils.auxiliary import parse_list_str, load_extras
+from utils.auxiliary import parse_list_str, load_extras, normalize_list_column
 
 st.set_page_config(layout="wide")
 
@@ -58,68 +58,59 @@ with infograph_tabs[0]:
 
     # Selector for study types
     with st.sidebar:
-        st.subheader("Filters")
+        st.subheader("🔎 Filters")
+
+        # Study Type
         if "study_type" in df.columns:
-            study_types_options = sorted(df["study_type"].dropna().unique().tolist())
-            selected_study_types = st.multiselect(
-                "Select Study Types",
-                study_types_options,
-                default=[],
-                label_visibility="visible"
-            )
+            study_type_options = sorted(df['study_type'].dropna().unique())
+            selected_study_types = st.multiselect("Select Study Types", options=study_type_options)
         else:
             st.warning("Column 'study_type' not available.")
             selected_study_types = None
 
-        # Selector for therapeutic areas (represented as 'therapeutic_area')
+        # Therapeutic Area
         if "therapeutic_area" in df.columns:
             df['therapeutic_area'] = df['therapeutic_area'].apply(parse_list_str)
-
-            # Explode and Count each element frequency
-            ther_areas_exploded = df.explode('therapeutic_area')['therapeutic_area'].dropna()
-            selected_therapeutic_areas = st.multiselect(
-                "Select Therapeutic Areas",
-                ther_areas_exploded,
-                default=[],
-                label_visibility="visible"
-            )
+            therapeutic_area_options = normalize_list_column(df['therapeutic_area'])
+            selected_therapeutic_areas = st.multiselect("Select Therapeutic Areas", options=therapeutic_area_options)
         else:
             st.warning("Column 'therapeutic_area' not available.")
             selected_therapeutic_areas = None
 
-        # Selector for interventions (represented as 'interventions')
+        # Interventions
         if "interventions" in df.columns:
             df['interventions'] = df['interventions'].apply(parse_list_str)
-
-            # Explode and Count each element frequency
-            interv_exploded = df.explode('interventions')['interventions'].dropna()
-            selected_interventions = st.multiselect(
-                "Select Interventions",
-                interv_exploded,
-                default=[],
-                label_visibility="visible"
-            )
+            intervention_options = normalize_list_column(df['interventions'])
+            selected_interventions = st.multiselect("Select Interventions", options=intervention_options)
         else:
             st.warning("Column 'interventions' not available.")
             selected_interventions = None
 
+
     # Apply filters to DataFrame
     filtered_df = df.copy()
-    if selected_study_types is not None and len(selected_study_types) > 0:
-        filtered_df = filtered_df[filtered_df["study_type"].isin(selected_study_types)]
-    if selected_therapeutic_areas is not None and len(selected_therapeutic_areas) > 0:
-        filtered_df = filtered_df[filtered_df["therapeutic_area"].isin(selected_therapeutic_areas)]
-    if selected_interventions is not None and len(selected_interventions) > 0:
-        filtered_df = filtered_df[filtered_df["interventions"].isin(selected_interventions)]
+
+    if selected_study_types:
+        filtered_df = filtered_df[filtered_df['study_type'].str.lower().isin([s.lower() for s in selected_study_types])]
+
+    if selected_therapeutic_areas:
+        filtered_df = filtered_df[filtered_df['therapeutic_area'].apply(
+            lambda x: any(term in [str(i).strip().lower() for i in x] for term in selected_therapeutic_areas) if isinstance(x, list) else False
+        )]
+
+    if selected_interventions:
+        filtered_df = filtered_df[filtered_df['interventions'].apply(
+            lambda x: any(term in [str(i).strip().lower() for i in x] for term in selected_interventions) if isinstance(x, list) else False
+        )]
 
     st.markdown("---")
 
     # ─── Gender and Age ────────────────────────────────────────────────────
     st.markdown("#### Participation by Gender and Age")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Female", int(df['Gender_F'].sum()))
-    col2.metric("Male", int(df['Gender_M'].sum()))
-    col3.metric("Children (0-17)", int(df['Age_0_17_years'].sum()))
+    col1.metric("Female", int(filtered_df['Gender_F'].sum()))
+    col2.metric("Male", int(filtered_df['Gender_M'].sum()))
+    col3.metric("Children (0-17)", int(filtered_df['Age_0_17_years'].sum()))
 
     # ─── Temporal Trend ──────────────────────────────────────────────────
     st.subheader("Temporal trend of studies")
@@ -140,8 +131,8 @@ with infograph_tabs[0]:
     # ─── Therapeutic Areas ─────────────────────────────────────────────────────
     st.markdown("### 🧬 Therapeutic Areas Overview")
 
-    df['therapeutic_area'] = df['therapeutic_area'].apply(parse_list_str)
-    ther_areas_exploded = df.explode('therapeutic_area')['therapeutic_area'].dropna()
+    filtered_df['therapeutic_area'] = filtered_df['therapeutic_area'].apply(parse_list_str)
+    ther_areas_exploded = filtered_df.explode('therapeutic_area')['therapeutic_area'].dropna()
     top_areas_df = ther_areas_exploded.value_counts().reset_index()
     top_areas_df.columns = ['Área', 'Total']
 
@@ -156,11 +147,11 @@ with infograph_tabs[0]:
     phase_counts = pd.DataFrame({
         "Phase": ["Early I", "I", "II", "III", "IV"],
         "Total": [
-            df['trial_Early_Phase_I'].sum(skipna=True),
-            df['trial_Phase_I'].sum(skipna=True),
-            df['trial_Phase_II'].sum(skipna=True),
-            df['trial_Phase_III'].sum(skipna=True),
-            df['trial_Phase_IV'].sum(skipna=True),
+            filtered_df['trial_Early_Phase_I'].sum(skipna=True),
+            filtered_df['trial_Phase_I'].sum(skipna=True),
+            filtered_df['trial_Phase_II'].sum(skipna=True),
+            filtered_df['trial_Phase_III'].sum(skipna=True),
+            filtered_df['trial_Phase_IV'].sum(skipna=True),
         ]
     })
     fig = px.bar(phase_counts, x="Phase", y="Total", text="Total")
@@ -169,7 +160,7 @@ with infograph_tabs[0]:
     st.divider()
     # ─── Sponsors ───────────────────────────────────────────────────────
     st.markdown("#### Distribution by Sponsor")
-    sponsor_counts = df['Sponsor_type'].value_counts().head(10).reset_index()
+    sponsor_counts = filtered_df['Sponsor_type'].value_counts().head(10).reset_index()
     sponsor_counts.columns = ['Sponsor type', 'Total']
     st.plotly_chart(px.bar(sponsor_counts, x='Sponsor type', y='Total', text='Total'), use_container_width=True)
 
@@ -193,9 +184,9 @@ with infograph_tabs[0]:
     col4.write("Blinding type (Masking)")
 
     masking_data = {
-        "Open": df['masking_OPEN'].sum(skipna=True),
-        "Single-blind": df['masking_SINGLE'].sum(skipna=True),
-        "Double-blind": df['masking_DOUBLE'].sum(skipna=True),
+        "Open": filtered_df['masking_OPEN'].sum(skipna=True),
+        "Single-blind": filtered_df['masking_SINGLE'].sum(skipna=True),
+        "Double-blind": filtered_df['masking_DOUBLE'].sum(skipna=True),
     }
     masking_df = pd.DataFrame({
         "masking_type": masking_data.keys(),
@@ -215,16 +206,16 @@ with infograph_tabs[0]:
 
     # ─── Inclusion and Exclusion Criteria ──────────────────────────────────────
     st.markdown("#### Studies with defined inclusion and exclusion criteria")
-    df['has_criteria'] = df[['inclusion_crt', 'exclusion_crt']].notna().any(axis=1)
-    crit_count = df['has_criteria'].value_counts().rename({True: 'Has criteria', False: 'No criteria'})
+    filtered_df['has_criteria'] = filtered_df[['inclusion_crt', 'exclusion_crt']].notna().any(axis=1)
+    crit_count = filtered_df['has_criteria'].value_counts().rename({True: 'Has criteria', False: 'No criteria'})
     st.plotly_chart(px.pie(names=crit_count.index, values=crit_count.values, hole=0.4))
 
     st.divider()
 
     # ─── Interventional Model ───────────────────────────────────────────
     st.markdown("#### Intervention model")
-    if 'intervention_model' in df.columns:
-        models = df['intervention_model'].value_counts().reset_index()
+    if 'intervention_model' in filtered_df.columns:
+        models = filtered_df['intervention_model'].value_counts().reset_index()
         models.columns = ['Model', 'Total']
         st.plotly_chart(px.bar(models, x='Model', y='Total', text='Total'))
 
@@ -235,9 +226,9 @@ with infograph_tabs[0]:
     # ─── Enrollment Distribution ─────────────────────────────────────────────────
     st.markdown("### Enrollment Trends Over Time")
 
-    df['enrollment'] = pd.to_numeric(df['enrollment'], errors='coerce')
-    df['start_year'] = pd.to_datetime(df['start_date'], errors='coerce').dt.year
-    scatter_df = df[['start_year', 'enrollment']].dropna()
+    filtered_df['enrollment'] = pd.to_numeric(filtered_df['enrollment'], errors='coerce')
+    filtered_df['start_year'] = pd.to_datetime(filtered_df['start_date'], errors='coerce').dt.year
+    scatter_df = filtered_df[['start_year', 'enrollment']].dropna()
     fig_enroll = px.scatter(scatter_df, x="start_year", y="enrollment",
                             size="enrollment", color="start_year",
                             labels={"start_year": "Start Year", "enrollment": "Enrollment"},
@@ -248,7 +239,7 @@ with infograph_tabs[0]:
 
     # ─── Keywords ──────────────────────────────────────────────────────
     st.markdown("#### Top Keywords")
-    keywords = df['keywords'].dropna().apply(parse_list_str).explode()
+    keywords = filtered_df['keywords'].dropna().apply(parse_list_str).explode()
     top_kw = keywords.value_counts().head(10).reset_index()
     top_kw.columns = ['Keyword', 'Total']
     st.plotly_chart(px.bar(top_kw, x='Keyword', y='Total', text='Total'))
@@ -259,10 +250,10 @@ with infograph_tabs[0]:
     st.subheader("📥 Export table with all the studies")
 
     cols_to_show = ['title', 'start_date', 'source_dataset', 'therapeutic_area', 'enrollment']
-    available_cols = [col for col in cols_to_show if col in df.columns]
+    available_cols = [col for col in cols_to_show if col in filtered_df.columns]
 
     # Copy and format 'therapeutic_area' column as string
-    df_export = df[available_cols].copy()
+    df_export = filtered_df[available_cols].copy()
 
     if 'therapeutic_area' in df_export.columns:
         df_export['therapeutic_area'] = df_export['therapeutic_area'].apply(

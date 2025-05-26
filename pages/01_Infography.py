@@ -108,9 +108,9 @@ with infograph_tabs[0]:
     # ─── Gender and Age ────────────────────────────────────────────────────
     st.markdown("#### Participation by Gender and Age")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Female", int(df['Gender_F'].sum()))
-    col2.metric("Male", int(df['Gender_M'].sum()))
-    col3.metric("Children (0-17)", int(df['Age_0_17_years'].sum()))
+    col1.metric("Female", int(filtered_df['Gender_F'].sum()))
+    col2.metric("Male", int(filtered_df['Gender_M'].sum()))
+    col3.metric("Children (0-17)", int(filtered_df['Age_0_17_years'].sum()))
 
     # ─── Temporal Trend ──────────────────────────────────────────────────
     st.subheader("Temporal trend of studies")
